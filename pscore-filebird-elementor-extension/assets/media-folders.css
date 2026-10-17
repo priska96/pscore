@@ -1,0 +1,403 @@
+/**
+ * PSCORE FileBird Elementor Builder Extension
+ * Version 1.0.0
+ *
+ * FileBird tree inside the existing WordPress / Elementor
+ * media modal "Actions" navigation.
+ */
+
+/* =========================================================
+   FileBird section
+   ========================================================= */
+
+.pscore-fbe-tree-wrapper {
+  margin-top: 16px;
+  padding-top: 14px;
+
+  border-top: 1px solid #dcdcde;
+
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   FileBird heading
+   ========================================================= */
+
+.pscore-fbe-tree-heading {
+  padding: 0 16px 8px;
+
+  color: #50575e;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* =========================================================
+   Tree
+   ========================================================= */
+
+.pscore-fbe-tree {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   Folder row
+   ========================================================= */
+
+.pscore-fbe-tree-row {
+  --pscore-fbe-depth: 0;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-height: 32px;
+
+  /*
+     * Nested folders are indented using the depth supplied
+     * by media-folders.js.
+     */
+  padding: 5px 8px 5px calc(8px + (var(--pscore-fbe-depth) * 14px));
+
+  box-sizing: border-box;
+
+  color: #2c3338;
+  background: transparent;
+
+  cursor: pointer;
+
+  user-select: none;
+
+  transition:
+    background-color 0.1s ease,
+    color 0.1s ease;
+}
+
+.pscore-fbe-tree-row:hover {
+  background: #f0f0f1;
+}
+
+/* =========================================================
+   Active folder
+   ========================================================= */
+
+.pscore-fbe-tree-row.is-active {
+  background: #2271b1;
+  color: #fff;
+}
+
+.pscore-fbe-tree-row.is-active:hover {
+  background: #135e96;
+}
+
+/* =========================================================
+   Expand / collapse arrow
+   ========================================================= */
+
+.pscore-fbe-tree-toggle {
+  flex: 0 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 18px;
+  height: 18px;
+
+  margin: 0 2px 0 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 2px;
+
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+
+  box-shadow: none;
+}
+
+.pscore-fbe-tree-toggle:hover,
+.pscore-fbe-tree-toggle:focus,
+.pscore-fbe-tree-toggle:active {
+  border: 0;
+  background: rgba(0, 0, 0, 0.06);
+
+  color: inherit;
+
+  outline: none;
+  box-shadow: none;
+}
+
+.pscore-fbe-tree-row.is-active .pscore-fbe-tree-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.pscore-fbe-tree-toggle .dashicons {
+  width: 16px;
+  height: 16px;
+
+  font-size: 16px;
+  line-height: 16px;
+}
+
+.pscore-fbe-tree-toggle-placeholder {
+  flex: 0 0 18px;
+
+  display: block;
+
+  width: 18px;
+  height: 18px;
+
+  margin-right: 2px;
+}
+
+/* =========================================================
+   Folder icon
+   ========================================================= */
+
+.pscore-fbe-tree-folder-icon {
+  flex: 0 0 18px;
+
+  width: 18px;
+  height: 18px;
+
+  margin-right: 5px;
+
+  font-size: 17px;
+  line-height: 18px;
+
+  opacity: 0.8;
+}
+
+.pscore-fbe-tree-row.is-active .pscore-fbe-tree-folder-icon {
+  opacity: 1;
+}
+
+/* =========================================================
+   Folder name
+   ========================================================= */
+
+.pscore-fbe-tree-name {
+  flex: 1 1 auto;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  line-height: 20px;
+}
+
+/* =========================================================
+   Attachment count
+   ========================================================= */
+
+.pscore-fbe-tree-count {
+  flex: 0 0 auto;
+
+  min-width: 22px;
+
+  margin-left: 5px;
+  padding: 0 5px;
+
+  border-radius: 9px;
+
+  background: #dcdcde;
+
+  color: #50575e;
+
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 17px;
+
+  text-align: center;
+
+  box-sizing: border-box;
+}
+
+.pscore-fbe-tree-row.is-active .pscore-fbe-tree-count {
+  background: rgba(255, 255, 255, 0.2);
+
+  color: #fff;
+}
+
+/* =========================================================
+   Special rows: All Files / Uncategorized
+   ========================================================= */
+
+.pscore-fbe-tree-special {
+  font-weight: 500;
+}
+
+/* =========================================================
+   Divider
+   ========================================================= */
+
+.pscore-fbe-tree-divider {
+  height: 1px;
+
+  margin: 7px 12px;
+
+  background: #dcdcde;
+}
+
+/* =========================================================
+   Nested folder groups
+   ========================================================= */
+
+.pscore-fbe-tree-children {
+  display: block;
+}
+
+.pscore-fbe-tree-children.is-collapsed {
+  display: none;
+}
+
+/* =========================================================
+   Loading
+   ========================================================= */
+
+.pscore-fbe-tree.is-loading {
+  opacity: 0.55;
+
+  pointer-events: none;
+}
+
+.pscore-fbe-tree-loading {
+  padding: 8px 16px;
+
+  color: #646970;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   Empty / error
+   ========================================================= */
+
+.pscore-fbe-tree-empty,
+.pscore-fbe-tree-error {
+  padding: 8px 16px;
+
+  color: #646970;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pscore-fbe-tree-error {
+  color: #b32d2e;
+}
+
+/* =========================================================
+   Media filtering
+   ========================================================= */
+
+.media-modal .attachments .attachment.pscore-fbe-hidden {
+  display: none !important;
+}
+
+/* =========================================================
+   Empty selected folder
+   ========================================================= */
+
+.pscore-fbe-media-empty {
+  position: absolute;
+
+  top: 120px;
+  left: 0;
+  right: 0;
+
+  padding: 30px;
+
+  color: #646970;
+
+  font-size: 14px;
+
+  text-align: center;
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   Existing WordPress media-menu
+   ========================================================= */
+
+/*
+ * The FileBird tree can be longer than the default Actions menu.
+ * Allow the existing left navigation to scroll.
+ */
+
+.media-modal.pscore-fbe-tree-enabled .media-menu {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/*
+ * Keep a little space below the final folder.
+ */
+
+.media-modal.pscore-fbe-tree-enabled .pscore-fbe-tree-wrapper {
+  padding-bottom: 20px;
+}
+
+/* =========================================================
+   Prevent long folder names breaking layout
+   ========================================================= */
+
+.pscore-fbe-tree-row,
+.pscore-fbe-tree-name,
+.pscore-fbe-tree-wrapper {
+  max-width: 100%;
+}
+
+/* =========================================================
+   WordPress / Elementor focus accessibility
+   ========================================================= */
+
+.pscore-fbe-tree-row:focus-visible {
+  outline: 2px solid #2271b1;
+  outline-offset: -2px;
+}
+
+.pscore-fbe-tree-row.is-active:focus-visible {
+  outline-color: #fff;
+}
+
+/* =========================================================
+   Smaller media modal
+   ========================================================= */
+
+@media screen and (max-width: 782px) {
+  .pscore-fbe-tree-heading {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .pscore-fbe-tree-row {
+    padding-left: calc(6px + (var(--pscore-fbe-depth) * 12px));
+
+    padding-right: 6px;
+  }
+
+  .pscore-fbe-tree-count {
+    min-width: 18px;
+
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}

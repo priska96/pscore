@@ -1,0 +1,63 @@
+.pscore-donation-form {
+  display: flex;
+  flex-direction: column;
+  row-gap: 20px;
+}
+
+.donation-frequency-btn-container,
+.donation-amount-btn-container,
+.donation-submit-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.donation-frequency-btn,
+.donation-amount-btn,
+.donation-submit-btn {
+  background-color: #fab125 !important;
+  border: none;
+}
+
+.donation-frequency-btn.active,
+.donation-amount-btn.active,
+.donation-custom-amount.active {
+  background: #00226a !important;
+  color: white;
+}
+
+.donation-custom-amount {
+  display: flex;
+  align-items: center;
+  width: auto;
+}
+
+.donation-custom-amount input {
+  width: 40px;
+  height: 16px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: white;
+  font: inherit;
+  text-align: center;
+}
+
+.donation-custom-amount input::-webkit-outer-spin-button,
+.donation-custom-amount input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.donation-custom-amount input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.donation-submit-btn {
+  font-size: 30px !important;
+  font-weight: bold !important;
+}

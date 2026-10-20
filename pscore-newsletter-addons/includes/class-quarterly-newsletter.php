@@ -225,67 +225,150 @@ final class PSCORE_Newsletter_Addons_Quarterly {
     }
 
     private static function create_delivery(int $source_id, int $last_success) {
-        global $wpdb;
+    global $wpdb;
 
-        if (!class_exists('Newsletter') || !defined('NEWSLETTER_USERS_TABLE')) {
-            return new WP_Error('newsletter_missing', 'The Newsletter plugin is not active.');
-        }
+    if (!class_exists('Newsletter') || !defined('NEWSLETTER_USERS_TABLE')) {
+        return new WP_Error(
+            'newsletter_missing',
+            'The Newsletter plugin is not active.'
+        );
+    }
 
-        $source = Newsletter::instance()->get_email($source_id);
-        if (!$source) {
-            return new WP_Error('source_missing', 'The selected newsletter no longer exists.');
-        }
+    // Load the permanent newsletter template.
+    $source = Newsletter::instance()->get_email($source_id);
 
-        $email = clone $source;
-        $email->id = 0;
-        $email->status = TNP_Email::STATUS_DRAFT;
-        $email->send_on = time();
+    if (!$source) {
+        return new WP_Error(
+            'source_missing',
+            'The selected newsletter no longer exists.'
+        );
+    }
 
-        if ((int) $email->editor === TNP_Email::EDITOR_COMPOSER && class_exists('NewsletterComposer')) {
-            $regenerated = NewsletterComposer::instance()->regenerate(
-                $email,
-                ['type' => 'automated', 'last_run' => $last_success],
-                true
-            );
+    // Work on a clone. The selected template itself must never be modified.
+    $email = clone $source;
 
-            if (is_wp_error($regenerated)) {
+    $email->id      = 0;
+    $email->status  = TNP_Email::STATUS_DRAFT;
+    $email->send_on = time();
+
+    /*
+     * Regenerate Composer content.
+     *
+     * Dynamic blocks such as the PSCORE posts block can intentionally stop
+     * generation when there has been no new content since the previous run.
+     *
+     * For the quarterly newsletter this must NOT cancel the complete
+     * newsletter. In that specific case we fall back to the content already
+     * stored in the template.
+     *
+     * Other Composer errors are still treated as real errors.
+     */
+    if (
+        (int) $email->editor === TNP_Email::EDITOR_COMPOSER
+        && class_exists('NewsletterComposer')
+    ) {
+        // Save the original template content before regeneration.
+        $fallback_message = $email->message;
+        $fallback_message_text = $email->message_text;
+
+        $regenerated = NewsletterComposer::instance()->regenerate(
+            $email,
+            [
+                'type'     => 'automated',
+                'last_run' => $last_success,
+            ],
+            true
+        );
+
+        if (is_wp_error($regenerated)) {
+            $error_message = $regenerated->get_error_message();
+
+            /*
+             * Newsletter's dynamic blocks may return an error such as:
+             * "The block number 4 stopped the generation"
+             *
+             * That means there is no new dynamic content. For our quarterly
+             * newsletter we still want to send the newsletter.
+             */
+            if (stripos($error_message, 'stopped the generation') !== false) {
+                $email->message = $fallback_message;
+                $email->message_text = $fallback_message_text;
+            } else {
+                // Any other Composer error is a real failure.
                 return $regenerated;
             }
-            if ($regenerated === false) {
-                return new WP_Error('no_content', 'A dynamic block stopped sending because there was no new content.');
-            }
+        } elseif ($regenerated === false) {
+            /*
+             * Some Newsletter versions may signal a stopped generation with
+             * false instead of WP_Error.
+             */
+            $email->message = $fallback_message;
+            $email->message_text = $fallback_message_text;
         }
-
-        $query = !empty($source->query)
-            ? $source->query
-            : 'select * from ' . NEWSLETTER_USERS_TABLE . " where status='C'";
-        $count_query = preg_replace('/^\s*select\s+\*/i', 'select count(*)', $query, 1);
-        $total = (int) $wpdb->get_var($count_query);
-
-        if ($total < 1) {
-            return new WP_Error('no_recipients', 'The selected newsletter has no matching recipients.');
-        }
-
-        $new_email = [
-            'language' => $source->language ?? '',
-            'subject' => $email->subject,
-            'message' => $email->message,
-            'message_text' => $email->message_text,
-            'status' => TNP_Email::STATUS_SENDING,
-            'total' => $total,
-            'last_id' => 0,
-            'sent' => 0,
-            'track' => (int) $email->track,
-            'type' => 'message',
-            'query' => $query,
-            'editor' => (int) $email->editor,
-            'send_on' => time(),
-            'token' => wp_generate_password(24, false, false),
-            'options' => $email->options,
-            'private' => (int) ($source->private ?? 0),
-            'updated' => time(),
-        ];
-
-        return Newsletter::instance()->save_email($new_email);
     }
+
+    /*
+     * Keep exactly the same recipient query as the template.
+     */
+    $query = !empty($source->query)
+        ? $source->query
+        : 'select * from ' . NEWSLETTER_USERS_TABLE . " where status='C'";
+
+    /*
+     * Convert the recipient SELECT query into a COUNT query.
+     */
+    $count_query = preg_replace(
+        '/^\s*select\s+\*/i',
+        'select count(*)',
+        $query,
+        1
+    );
+
+    $total = (int) $wpdb->get_var($count_query);
+
+    if ($total < 1) {
+        return new WP_Error(
+            'no_recipients',
+            'The selected newsletter has no matching recipients.'
+        );
+    }
+
+    /*
+     * Create a NEW newsletter.
+     *
+     * #4 remains the permanent draft/template.
+     * This new newsletter gets its own ID and immediately enters the normal
+     * Newsletter sending queue.
+     */
+    $new_email = [
+        'language' => $source->language ?? '',
+        'subject' => $email->subject,
+        'message' => $email->message,
+        'message_text' => $email->message_text,
+
+        'status' => TNP_Email::STATUS_SENDING,
+
+        'total' => $total,
+        'last_id' => 0,
+        'sent' => 0,
+
+        'track' => (int) $email->track,
+
+        'type' => 'message',
+        'query' => $query,
+        'editor' => (int) $email->editor,
+
+        'send_on' => time(),
+
+        'token' => wp_generate_password(24, false, false),
+
+        'options' => $email->options,
+
+        'private' => (int) ($source->private ?? 0),
+
+        'updated' => time(),
+    ];
+
+    return Newsletter::instance()->save_email($new_email);
+}
 }
